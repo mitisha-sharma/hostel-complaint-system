@@ -1,16 +1,59 @@
-# React + Vite
+# Smart Hostel Complaint Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web-based hostel complaint management system built using **React + Vite**. The platform allows students to raise complaints, administrators to manage and assign them, and maintenance staff to resolve them efficiently in one centralized system.
 
-Currently, two official plugins are available:
+The application also includes an **AI chatbot powered by Claude AI** to assist users with complaints, queries, and system navigation.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Student Portal
+- Raise complaints with category, priority, and description  
+- Detects similar complaints before submission to reduce duplicates  
+- Track complaint status with updates from maintenance staff  
 
-## Expanding the ESLint configuration
+### Admin / Warden Portal
+- Dashboard to view and manage all complaints  
+- Assign complaints to maintenance staff or reject them  
+- Analytics section showing resolution rates, complaint categories, and staff performance  
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Maintenance Staff Portal
+- View assigned complaints  
+- Update complaint status (Assigned → In Progress → Resolved)  
+- Add resolution notes when completing a complaint  
+
+### AI Chatbot
+- Available across the platform  
+- Helps students describe issues and draft complaints  
+- Helps admins analyze complaint trends and workloads  
+- Helps maintenance staff track tasks and priorities  
+
+---
+
+## Tech Stack
+
+- **React 18**
+- **Vite**
+- **React Router DOM**
+- **Claude AI API**
+
+---
+
+## Test Credentials
+
+| Role | Email | Password |
+|-----|-----|-----|
+| Student | student@hostel.com | student123 |
+| Admin | admin@hostel.com | admin123 |
+| Maintenance Staff | staff@hostel.com | staff123 |
+
+---
+
+## Setup
+
+```bash
+git clone https://github.com/YOUR_USERNAME/hostel-complaint-system.git
+cd hostel-complaint-system
+npm install
+npm run dev
