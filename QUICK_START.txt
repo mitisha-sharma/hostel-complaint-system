@@ -1,0 +1,141 @@
+QUICK START GUIDE - Hostel Complaint System
+============================================
+
+STEP 1: Start MongoDB
+=====================
+Open PowerShell and run:
+  mongod
+
+If mongod is not recognized, install MongoDB Community Edition first.
+Download from: https://www.mongodb.com/try/download/community
+
+
+STEP 2: Seed Database (Only First Time)
+========================================
+Open NEW PowerShell window and navigate to project:
+  cd c:\Users\abhis\Documents\Project\hostel-complaint-system\backend
+  node seed.js
+
+You should see:
+  ✓ MongoDB connected for seeding
+  ✓ Cleared existing users
+  ✓ Users created: 5
+  ✓ Seeding completed successfully
+
+
+STEP 3: Start Backend Server
+=============================
+Keep PowerShell window open and run:
+  npm run dev
+
+You should see:
+  ✓ Server is running on port 5000
+  ✓ MongoDB connected
+
+
+STEP 4: Start Frontend Server
+==============================
+Open ANOTHER PowerShell window:
+  cd c:\Users\abhis\Documents\Project\hostel-complaint-system
+  npm run dev
+
+Then open browser and go to:
+  http://localhost:5173
+
+
+STEP 5: Login and Test
+======================
+Use any of these credentials:
+
+Student:
+  Email: student@hostel.com
+  Password: student123
+
+Admin:
+  Email: admin@hostel.com
+  Password: admin123
+
+Maintenance:
+  Email: staff@hostel.com
+  Password: staff123
+
+
+TESTING WORKFLOW
+================
+
+Test 1 - Student Raises Complaint:
+  1. Login as student
+  2. Click "Raise Complaint"
+  3. Fill form and submit
+  4. Check dashboard for your complaint
+
+Test 2 - Admin Reviews:
+  1. Open new browser tab
+  2. Login as admin
+  3. Go to Admin Dashboard
+  4. Find the complaint
+  5. Click Assign and select staff
+  6. Verify status changes to "Assigned"
+
+Test 3 - Staff Updates:
+  1. Open new browser tab
+  2. Login as staff
+  3. View assigned complaints
+  4. Update status to "In Progress"
+  5. Then mark as "Resolved"
+
+Test 4 - Student Tracks:
+  1. Go back to student tab
+  2. Refresh and see updated status
+
+
+TROUBLESHOOTING
+===============
+
+Port is already in use?
+  Stop-Process -Port 5000 -Force
+
+MongoDB not starting?
+  net start MongoDB
+  (or install MongoDB Community Edition)
+
+Cannot connect to backend?
+  - Check if backend is running on port 5000
+  - Check CORS is enabled (already configured)
+  - Check token is in localStorage
+
+npm install failed?
+  rm -r backend/node_modules
+  rm backend/package-lock.json
+  cd backend && npm install
+
+
+IMPORTANT FILES
+===============
+- Frontend API Client: src/api/api.js
+- Backend Server: backend/server.js
+- Backend Routes: backend/routes/*
+- Setup Guide: COMPLETE_SETUP_GUIDE.md
+- Detailed Summary: BACKEND_SETUP_SUMMARY.txt
+
+
+NEXT STEPS
+==========
+After testing:
+  1. Review COMPLETE_SETUP_GUIDE.md for detailed instructions
+  2. Check BACKEND_SETUP_SUMMARY.txt for technical overview
+  3. Read frontend and backend README files
+  4. Test all features with different user roles
+  5. Check backend/README.md for all API endpoints
+
+
+SYSTEM REQUIREMENTS
+===================
+✓ Node.js v16+ (check: node --version)
+✓ npm v8+ (check: npm --version)
+✓ MongoDB v5+ (check: mongod --version)
+✓ 2 GB RAM minimum
+✓ 500 MB disk space
+
+
+That's it! You're ready to go!

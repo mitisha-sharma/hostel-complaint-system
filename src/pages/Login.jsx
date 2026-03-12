@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { users } from "../data/dummyData";
+import { authAPI } from "../api/api";
 import ChatBot from "../components/ChatBot";
 
 function Login() {
@@ -14,25 +14,28 @@ function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
-    setTimeout(() => {
-      const foundUser = users.find(
-        (u) => u.email === email && u.password === password
-      );
-      if (!foundUser) {
-        setError("Invalid email or password. Please try again.");
-        setIsLoading(false);
-        return;
+
+    try {
+      const response = await authAPI.login(email, password);
+
+      if (response.message === 'Login successful') {
+        login(response.user);
+        if (response.user.role === "student") navigate("/student");
+        else if (response.user.role === "admin") navigate("/admin");
+        else if (response.user.role === "maintenance") navigate("/maintenance");
+      } else {
+        setError(response.message || "Login failed");
       }
-      login(foundUser);
-      if (foundUser.role === "student") navigate("/student");
-      else if (foundUser.role === "admin") navigate("/admin");
-      else if (foundUser.role === "maintenance") navigate("/maintenance");
-      setIsLoading(false);
-    }, 800);
+    } catch (error) {
+      setError("Network error. Please check if backend is running.");
+      console.error("Login error:", error);
+    }
+
+    setIsLoading(false);
   };
 
   const fillCredentials = (role) => {

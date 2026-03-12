@@ -1,13 +1,13 @@
 // src/pages/AdminDashboard.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { complaints, maintenanceStaff } from "../data/dummyData";
+import { complaintAPI } from "../api/api";
 import Navbar from "../components/Navbar";
 import ChatBot from "../components/ChatBot";
 
 function AdminDashboard() {
   const navigate = useNavigate();
-  const [complaintList, setComplaintList] = useState([...complaints]);
+  const [complaintList, setComplaintList] = useState([]);
   const [filter, setFilter] = useState("All");
   const [activeTab, setActiveTab] = useState("complaints");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -16,6 +16,33 @@ function AdminDashboard() {
   const [rejectModal, setRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const maintenanceStaff = [
+    { staff_id: "507f1f77bcf86cd799439011", name: "Suresh Kumar", department: "Electrical" },
+    { staff_id: "507f1f77bcf86cd799439012", name: "Mahesh Plumber", department: "Plumbing" },
+    { staff_id: "507f1f77bcf86cd799439013", name: "Ravi Carpenter", department: "Carpentry" },
+  ];
+
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const response = await complaintAPI.getComplaints();
+        if (response.complaints) {
+          setComplaintList(response.complaints);
+        } else {
+          setError(response.message || "Failed to load complaints");
+        }
+      } catch (error) {
+        setError("Network error. Please check if backend is running.");
+        console.error("Fetch complaints error:", error);
+      }
+      setLoading(false);
+    };
+
+    fetchComplaints();
+  }, []);
 
   const filtered =
     filter === "All"
@@ -38,10 +65,8 @@ function AdminDashboard() {
 
   const updateComplaint = (id, updates) => {
     setComplaintList((prev) =>
-      prev.map((c) => (c.complaint_id === id ? { ...c, ...updates } : c))
+      prev.map((c) => (c._id === id ? { ...c, ...updates } : c))
     );
-    const index = complaints.findIndex((c) => c.complaint_id === id);
-    if (index !== -1) Object.assign(complaints[index], updates);
   };
 
   const handleValidate = (complaint) => {

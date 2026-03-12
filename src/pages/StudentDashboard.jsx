@@ -1,14 +1,37 @@
 // src/pages/StudentDashboard.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { complaints } from "../data/dummyData";
+import { complaintAPI } from "../api/api";
 import Navbar from "../components/Navbar";
 import ChatBot from "../components/ChatBot";
 
 function StudentDashboard() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const response = await complaintAPI.getComplaints();
+        if (response.complaints) {
+          setComplaints(response.complaints);
+        } else {
+          setError(response.message || "Failed to load complaints");
+        }
+      } catch (error) {
+        setError("Network error. Please check if backend is running.");
+        console.error("Fetch complaints error:", error);
+      }
+      setLoading(false);
+    };
+
+    fetchComplaints();
+  }, []);
 
   const myComplaints = complaints.filter(
     (c) => c.student_id === currentUser.id

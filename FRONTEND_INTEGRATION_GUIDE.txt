@@ -1,0 +1,431 @@
+================================================================================
+FRONTEND INTEGRATION GUIDE - Backend API Integration
+================================================================================
+
+This guide explains how to integrate the existing React frontend with the new
+Node.js/Express backend API.
+
+================================================================================
+1. API CLIENT SETUP (ALREADY DONE)
+================================================================================
+
+File: src/api/api.js
+
+This file contains all API methods organized by category:
+  - authAPI (login, register, logout)
+  - complaintAPI (CRUD operations)
+  - userAPI (user management)
+  - staffAPI (staff management)
+
+No additional setup needed - all methods are ready to use!
+
+================================================================================
+2. INTEGRATING LOGIN PAGE
+================================================================================
+
+Current File: src/pages/Login.jsx
+
+CURRENT IMPLEMENTATION (Dummy Data):
+  Finds user in dummyData.js array
+  Doesn't actually authenticate with backend
+  No token generation
+
+CHANGES NEEDED:
+  Import API: import { authAPI } from '../api/api';
+  Replace this:
+    const foundUser = users.find((u) => u.email === email && u.password === password);
+  
+  With this:
+    const response = await authAPI.login(email, password);
+    if (response.message === 'Login successful') {
+      login(response.user);
+      // Token is automatically stored in localStorage
+    } else {
+      setError(response.message);
+    }
+
+EXAMPLE CODE:
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    
+    try {
+      const response = await authAPI.login(email, password);
+      
+      if (response.message === 'Login successful') {
+        login(response.user);
+        const user = response.user;
+        if (user.role === 'student') navigate('/student');
+        else if (user.role === 'admin') navigate('/admin');
+        else if (user.role === 'maintenance') navigate('/maintenance');
+      } else {
+        setError(response.message || 'Login failed');
+      }
+    } catch (err) {
+      setError('Connection error: ' + err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+================================================================================
+3. INTEGRATING STUDENT DASHBOARD
+================================================================================
+
+Current File: src/pages/StudentDashboard.jsx
+
+CHANGES NEEDED:
+  Replace:
+    const [complaints, setComplaints] = useState(dummyComplaints);
+  
+  With:
+    const [complaints, setComplaints] = useState([]);
+    
+    useEffect(() => {
+      const fetchComplaints = async () => {
+        try {
+          const response = await complaintAPI.getComplaints();
+          setComplaints(response.complaints || []);
+        } catch (err) {
+          setError('Failed to fetch complaints');
+        }
+      };
+      fetchComplaints();
+    }, []);
+
+IMPORT:
+  import { complaintAPI } from '../api/api';
+
+================================================================================
+4. INTEGRATING RAISE COMPLAINT PAGE
+================================================================================
+
+Current File: src/pages/RaiseComplaint.jsx
+
+CHANGES NEEDED:
+  In handleSubmit function:
+  
+  Replace dummy data with:
+    const response = await complaintAPI.raiseComplaint(
+      selectedCategory,
+      description,
+      selectedPriority
+    );
+    
+    if (response.message === 'Complaint raised successfully') {
+      navigate('/student');
+    } else {
+      setError(response.message);
+    }
+
+IMPORT:
+  import { complaintAPI } from '../api/api';
+
+================================================================================
+5. INTEGRATING ADMIN DASHBOARD
+================================================================================
+
+Current File: src/pages/AdminDashboard.jsx
+
+CHANGES NEEDED:
+  Fetch all complaints instead of filtering dummyData:
+    useEffect(() => {
+      const fetchComplaints = async () => {
+        const response = await complaintAPI.getComplaints();
+        setComplaints(response.complaints || []);
+      };
+      fetchComplaints();
+    }, []);
+
+  Fetch analytics stats:
+    useEffect(() => {
+      const fetchStats = async () => {
+        const response = await complaintAPI.getStats();
+        setStats(response);
+      };
+      fetchStats();
+    }, []);
+
+  Assign complaint:
+    const handleAssign = async (complaintId, staffId) => {
+      const response = await complaintAPI.assignComplaint(
+        complaintId,
+        staffId,
+        staffName
+      );
+      // Refresh complaints list
+    };
+
+IMPORT:
+  import { complaintAPI, staffAPI } from '../api/api';
+
+================================================================================
+6. INTEGRATING MAINTENANCE DASHBOARD
+================================================================================
+
+Current File: src/pages/MaintenanceDashboard.jsx
+
+CHANGES NEEDED:
+  Fetch assigned complaints:
+    useEffect(() => {
+      const fetchComplaints = async () => {
+        const response = await complaintAPI.getComplaints();
+        // Will automatically filter to only staff's assigned complaints
+        setComplaints(response.complaints || []);
+      };
+      fetchComplaints();
+    }, []);
+
+  Update complaint status:
+    const handleStatusUpdate = async (complaintId, newStatus, notes) => {
+      const response = await complaintAPI.updateStatus(
+        complaintId,
+        newStatus,
+        notes
+      );
+      // Refresh list
+    };
+
+IMPORT:
+  import { complaintAPI } from '../api/api';
+
+================================================================================
+7. INTEGRATING COMPLAINT DETAILS
+================================================================================
+
+Current File: src/pages/ComplaintDetails.jsx
+
+CHANGES NEEDED:
+  Fetch single complaint:
+    useEffect(() => {
+      const fetchComplaint = async () => {
+        const response = await complaintAPI.getComplaintById(complaintId);
+        setComplaint(response.complaint);
+      };
+      fetchComplaint();
+    }, [complaintId]);
+
+  Update status with notes:
+    const handleResolve = async (notes) => {
+      const response = await complaintAPI.updateStatus(
+        complaintId,
+        'Resolved',
+        notes
+      );
+    };
+
+IMPORT:
+  import { complaintAPI } from '../api/api';
+
+================================================================================
+8. ERROR HANDLING PATTERN
+================================================================================
+
+All API methods return JSON responses with:
+  - message: String describing result/error
+  - data: Actual data (user, complaints, etc.)
+
+PATTERN TO FOLLOW:
+  try {
+    const response = await apiMethod(...);
+    
+    if (response.message?.includes('success') || response.data) {
+      // Handle success
+      setState(response.data);
+    } else {
+      // Handle error from API
+      setError(response.message);
+    }
+  } catch (error) {
+    // Handle network or other errors
+    setError('Network error: ' + error.message);
+  }
+
+================================================================================
+9. TOKEN MANAGEMENT
+================================================================================
+
+Token Handling:
+  - Automatically stored after login: localStorage.setItem('token', token)
+  - Automatically retrieved in API calls: Bearer token in Authorization header
+  - Automatically removed on logout: localStorage.removeItem('token')
+
+Token Validation:
+  - All protected routes verify token validity
+  - Invalid/expired tokens get 401 response
+  - Frontend should redirect to login on 401
+
+Check Token:
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user'));
+
+Clear Token:
+  authAPI.logout(); // Clears both token and user
+
+================================================================================
+10. AUTHENTICATION CONTEXT UPDATES
+================================================================================
+
+Current File: src/context/AuthContext.jsx
+
+The AuthContext should be updated to use the new token-based system:
+
+Current approach: Store user object in context
+New approach: Store user and token, verify token on page load
+
+RECOMMENDED UPDATE:
+  export function AuthProvider({ children }) {
+    const [user, setUser] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+      // Check if user is already logged in
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+      setLoading(false);
+    }, []);
+
+    const login = (userData) => {
+      setUser(userData);
+    };
+
+    const logout = () => {
+      setUser(null);
+      authAPI.logout();
+    };
+
+    return (
+      <AuthContext.Provider value={{ user, login, logout, loading }}>
+        {children}
+      </AuthContext.Provider>
+    );
+  }
+
+================================================================================
+11. ENVIRONMENT CONFIGURATION
+================================================================================
+
+Frontend Configuration:
+  Backend API URL is hardcoded to: http://localhost:5000/api
+
+For production, update src/api/api.js:
+  Change:
+    const API_BASE_URL = 'http://localhost:5000/api';
+  
+  To:
+    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+Then create .env file:
+  REACT_APP_API_URL=https://your-production-backend.com/api
+
+================================================================================
+12. TESTING INTEGRATION
+================================================================================
+
+Step-by-step integration testing:
+
+1. Start backend:
+   cd backend && npm run dev
+
+2. Seed database:
+   node seed.js (from backend folder)
+
+3. Start frontend:
+   npm run dev (from root)
+
+4. Test login:
+   - Try logging in with test credentials
+   - Check if token appears in localStorage
+   - Verify redirect to correct dashboard
+
+5. Test complaint operations:
+   - Raise complaint as student
+   - Check admin dashboard
+   - Assign to staff
+   - Update status as staff
+   - Verify all changes reflect in real-time
+
+6. Check browser console:
+   - Look for any API errors
+   - Verify network requests in Network tab
+   - Check localStorage for token and user
+
+================================================================================
+13. COMMON INTEGRATION ISSUES & SOLUTIONS
+================================================================================
+
+Issue: "Cannot POST /api/auth/login" - 404 error
+  Solution: Verify backend is running on port 5000
+  Check: npm run dev from backend folder
+
+Issue: CORS error - "Access to XMLHttpRequest blocked"
+  Solution: Already enabled in backend (server.js)
+  Check: CORS middleware is before routes
+
+Issue: Token not persisting across pages
+  Solution: Verify localStorage is working
+  Check: localStorage.getItem('token') in console
+
+Issue: Unauthorized (401) errors on API calls
+  Solution: Verify token is being sent with each request
+  Check: Authorization header in Network tab
+
+Issue: Cannot find module 'api/api'
+  Solution: Verify filepath is correct
+  Use: import { authAPI } from '../api/api';
+
+Issue: Data not updating in real-time
+  Solution: Add useEffect with proper dependency array
+  Or: Call API again after changes
+
+================================================================================
+14. FILE CHECKLIST
+================================================================================
+
+Frontend Files to Update:
+  ☐ src/pages/Login.jsx - Import and use authAPI
+  ☐ src/pages/StudentDashboard.jsx - Import and use complaintAPI
+  ☐ src/pages/RaiseComplaint.jsx - Import and use complaintAPI
+  ☐ src/pages/AdminDashboard.jsx - Import API methods
+  ☐ src/pages/MaintenanceDashboard.jsx - Import complaintAPI
+  ☐ src/pages/ComplaintDetails.jsx - Import complaintAPI
+  ☐ src/context/AuthContext.jsx - Update for token-based auth
+  ☐ src/components/ProtectedRoute.jsx - Verify token checking
+
+Files Already Ready:
+  ✓ src/api/api.js - All API methods defined
+  ✓ backend/* - Complete backend implementation
+  ✓ .env (backend) - Configuration ready
+  ✓ backend/seed.js - Test data ready
+
+================================================================================
+15. NEXT STEPS AFTER INTEGRATION
+================================================================================
+
+1. Update all page components (listed above)
+2. Test with all three user roles
+3. Verify all CRUD operations work
+4. Test error scenarios
+5. Add loading states and error handling
+6. Test with network issues
+7. Deploy to production (update API URL)
+8. Monitor for errors in production
+
+================================================================================
+SUMMARY
+================================================================================
+
+✓ Backend API is fully implemented and ready
+✓ API client (api.js) is created and ready to use
+✓ All endpoints are documented
+✓ Security (JWT, role-based access) is implemented
+✓ Database seeding is automated
+
+Next Step: Update existing frontend pages to use API instead of dummy data
+
+See: COMPLETE_SETUP_GUIDE.md for detailed testing instructions
+
+================================================================================
