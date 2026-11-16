@@ -1,8 +1,8 @@
 // src/pages/RaiseComplaint.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { complaintAPI } from "../api/api";
+import { complaintAPI, shortId } from "../api/api";
 import Navbar from "../components/Navbar";
 
 function RaiseComplaint() {
@@ -17,6 +17,12 @@ function RaiseComplaint() {
   const [duplicates, setDuplicates] = useState([]);
   const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
   const [proceedAnyway, setProceedAnyway] = useState(false);
+  const [complaints, setComplaints] = useState([]);
+  const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    complaintAPI.getComplaints().then((res) => setComplaints(res.complaints || [])).catch(console.error);
+  }, []);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -67,7 +73,7 @@ function RaiseComplaint() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // If duplicates found and user hasn't confirmed, show warning
@@ -82,22 +88,12 @@ function RaiseComplaint() {
       return;
     }
 
-    const newComplaint = {
-      complaint_id: complaints.length + 1,
-      category: form.category,
-      description: form.description,
-      priority: form.priority,
-      status: "Raised",
-      date: new Date().toISOString().split("T")[0],
-      student_id: currentUser.id,
-      student_name: currentUser.name,
-      room_no: currentUser.room_no,
-      staff_id: null,
-      staff_name: null,
-      resolution_notes: "",
-    };
-
-    complaints.push(newComplaint);
+    setSubmitError("");
+    const res = await complaintAPI.raiseComplaint(form.category, form.description, form.priority);
+    if (!res.complaint) {
+      setSubmitError(res.message || "Could not submit complaint. Please try again.");
+      return;
+    }
     setSubmitted(true);
   };
 
@@ -165,7 +161,7 @@ function RaiseComplaint() {
               {duplicates.map((d) => (
                 <div key={d.complaint_id} style={dupStyles.matchItem}>
                   <div style={dupStyles.matchLeft}>
-                    <span style={dupStyles.matchId}>#{d.complaint_id}</span>
+                    <span style={dupStyles.matchId}>#{shortId(d.complaint_id)}</span>
                     <div>
                       <p style={dupStyles.matchCategory}>
                         {d.category} — {d.priority} Priority
@@ -304,6 +300,7 @@ function RaiseComplaint() {
               <button type="button" style={styles.cancelBtn} onClick={() => navigate("/student")}>
                 Cancel
               </button>
+              {submitError && <p style={styles.errorText}>⚠️ {submitError}</p>}
               <button type="submit" style={styles.submitBtn}>
                 {duplicates.length > 0 && !proceedAnyway
                   ? "⚠️ Check Duplicates First"

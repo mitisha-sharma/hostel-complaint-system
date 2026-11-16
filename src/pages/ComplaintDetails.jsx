@@ -1,7 +1,8 @@
 // src/pages/ComplaintDetails.jsx
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { complaints } from "../data/dummyData";
+import { complaintAPI, shortId } from "../api/api";
 import Navbar from "../components/Navbar";
 
 function ComplaintDetails() {
@@ -10,12 +11,20 @@ function ComplaintDetails() {
   const navigate = useNavigate();
 
   // Find the complaint matching the URL id
-  const complaint = complaints.find(
-    (c) => c.complaint_id === parseInt(id)
-  );
+  const [complaint, setComplaint] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    complaintAPI.getComplaintById(id)
+      .then((res) => setComplaint(res.complaint || null))
+      .catch(() => setComplaint(null))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   // Back path depends on role
   const backPath = `/${currentUser.role === "maintenance" ? "maintenance" : currentUser.role}`;
+
+  if (loading) return null;
 
   if (!complaint) {
     return (
@@ -46,7 +55,7 @@ function ComplaintDetails() {
         <div style={styles.titleRow}>
           <div>
             <h1 style={styles.pageTitle}>
-              Complaint #{complaint.complaint_id}
+              Complaint #{shortId(complaint.complaint_id)}
             </h1>
             <p style={styles.pageSubtitle}>
               Submitted on {complaint.date} · Room {complaint.room_no}

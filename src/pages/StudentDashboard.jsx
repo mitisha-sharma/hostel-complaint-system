@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { complaintAPI } from "../api/api";
+import { complaintAPI, shortId } from "../api/api";
 import Navbar from "../components/Navbar";
 import ChatBot from "../components/ChatBot";
 
@@ -165,7 +165,7 @@ function StudentDashboard() {
                     }}
                   >
                     <td style={styles.td}>
-                      <span style={styles.idBadge}>#{c.complaint_id}</span>
+                      <span style={styles.idBadge}>#{shortId(c.complaint_id)}</span>
                     </td>
                     <td style={styles.td}>
                       <span style={styles.categoryText}>

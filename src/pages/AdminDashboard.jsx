@@ -1,7 +1,7 @@
 // src/pages/AdminDashboard.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { complaintAPI } from "../api/api";
+import { complaintAPI, staffAPI, shortId } from "../api/api";
 import Navbar from "../components/Navbar";
 import ChatBot from "../components/ChatBot";
 
@@ -19,11 +19,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const maintenanceStaff = [
-    { staff_id: "507f1f77bcf86cd799439011", name: "Suresh Kumar", department: "Electrical" },
-    { staff_id: "507f1f77bcf86cd799439012", name: "Mahesh Plumber", department: "Plumbing" },
-    { staff_id: "507f1f77bcf86cd799439013", name: "Ravi Carpenter", department: "Carpentry" },
-  ];
+  const [maintenanceStaff, setMaintenanceStaff] = useState([]);
 
   useEffect(() => {
     const fetchComplaints = async () => {
@@ -41,7 +37,15 @@ function AdminDashboard() {
       setLoading(false);
     };
 
+    const fetchStaff = async () => {
+      try {
+        const res = await staffAPI.getAllStaff();
+        setMaintenanceStaff((res.staff || []).map((u) => ({ staff_id: u._id, name: u.name, department: u.department })));
+      } catch (e) { console.error("Fetch staff error:", e); }
+    };
+
     fetchComplaints();
+    fetchStaff();
   }, []);
 
   const filtered =
@@ -74,16 +78,16 @@ function AdminDashboard() {
     setAssignModal(true);
   };
 
-  const handleAssignConfirm = () => {
+  const handleAssignConfirm = async () => {
     if (!selectedStaff) return;
-    const staff = maintenanceStaff.find((s) => s.staff_id === parseInt(selectedStaff));
-    updateComplaint(selectedComplaint.complaint_id, {
-      status: "Assigned", staff_id: staff.staff_id, staff_name: staff.name,
-    });
+    const staff = maintenanceStaff.find((s) => s.staff_id === selectedStaff);
+    const res = await complaintAPI.assignComplaint(selectedComplaint._id, staff.staff_id, staff.name);
+    if (!res.complaint) { showToast(res.message || "Could not assign complaint", "#dc2626"); return; }
+    updateComplaint(selectedComplaint._id, res.complaint);
     setAssignModal(false);
     setSelectedStaff("");
     setSelectedComplaint(null);
-    showToast(`✅ Complaint #${selectedComplaint.complaint_id} assigned to ${staff.name}`);
+    showToast(`✅ Complaint #${shortId(selectedComplaint.complaint_id)} assigned to ${staff.name}`);
   };
 
   const handleRejectClick = (complaint) => {
@@ -91,15 +95,14 @@ function AdminDashboard() {
     setRejectModal(true);
   };
 
-  const handleRejectConfirm = () => {
-    updateComplaint(selectedComplaint.complaint_id, {
-      status: "Rejected",
-      resolution_notes: rejectReason || "Rejected by admin.",
-    });
+  const handleRejectConfirm = async () => {
+    const res = await complaintAPI.rejectComplaint(selectedComplaint._id);
+    if (!res.complaint) { showToast(res.message || "Could not reject complaint", "#dc2626"); return; }
+    updateComplaint(selectedComplaint._id, { ...res.complaint, resolution_notes: rejectReason || "Rejected by admin." });
     setRejectModal(false);
     setRejectReason("");
     setSelectedComplaint(null);
-    showToast(`❌ Complaint #${selectedComplaint.complaint_id} rejected.`, "#dc2626");
+    showToast(`❌ Complaint #${shortId(selectedComplaint.complaint_id)} rejected.`, "#dc2626");
   };
 
   // Analytics data
@@ -148,7 +151,7 @@ function AdminDashboard() {
       {assignModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <h3 style={styles.modalTitle}>Assign Complaint #{selectedComplaint?.complaint_id}</h3>
+            <h3 style={styles.modalTitle}>Assign Complaint #{shortId(selectedComplaint?.complaint_id)}</h3>
             <p style={styles.modalSubtitle}>Select a maintenance staff member to handle this complaint.</p>
             <div style={styles.fieldGroup}>
               <label style={styles.label}>Maintenance Staff</label>
@@ -178,7 +181,7 @@ function AdminDashboard() {
       {rejectModal && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <h3 style={{ ...styles.modalTitle, color: "#dc2626" }}>Reject Complaint #{selectedComplaint?.complaint_id}</h3>
+            <h3 style={{ ...styles.modalTitle, color: "#dc2626" }}>Reject Complaint #{shortId(selectedComplaint?.complaint_id)}</h3>
             <p style={styles.modalSubtitle}>Please provide a reason for rejection.</p>
             <div style={styles.fieldGroup}>
               <label style={styles.label}>Reason (optional)</label>
@@ -263,7 +266,7 @@ function AdminDashboard() {
                     {filtered.map((c, index) => (
                       <tr key={c.complaint_id} className="table-row-hover"
                         style={{ ...styles.tableRow, backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9fafb" }}>
-                        <td style={styles.td}><span style={styles.idBadge}>#{c.complaint_id}</span></td>
+                        <td style={styles.td}><span style={styles.idBadge}>#{shortId(c.complaint_id)}</span></td>
                         <td style={styles.td}><span style={styles.studentName}>{c.student_name}</span></td>
                         <td style={styles.td}><span style={styles.roomBadge}>{c.room_no}</span></td>
                         <td style={styles.td}><span style={styles.categoryText}>{getCategoryIcon(c.category)} {c.category}</span></td>

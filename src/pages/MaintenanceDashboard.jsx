@@ -1,8 +1,8 @@
 // src/pages/MaintenanceDashboard.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { complaints } from "../data/dummyData";
+import { complaintAPI, shortId } from "../api/api";
 import Navbar from "../components/Navbar";
 import ChatBot from "../components/ChatBot";
 
@@ -10,9 +10,11 @@ function MaintenanceDashboard() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  const [complaintList, setComplaintList] = useState(
-    complaints.filter((c) => c.staff_id === currentUser.id)
-  );
+  const [complaintList, setComplaintList] = useState([]);
+
+  useEffect(() => {
+    complaintAPI.getComplaints().then((res) => setComplaintList(res.complaints || [])).catch(console.error);
+  }, []);
   const [filter, setFilter] = useState("All");
   const [statusModal, setStatusModal] = useState(false);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
@@ -46,20 +48,15 @@ function MaintenanceDashboard() {
     setStatusModal(true);
   };
 
-  const handleUpdateConfirm = () => {
+  const handleUpdateConfirm = async () => {
     if (newStatus === "Resolved" && !resolutionNotes.trim()) {
       setNotesError("Please add resolution notes before marking as Resolved.");
       return;
     }
-    const updates = { status: newStatus, resolution_notes: resolutionNotes };
-    setComplaintList((prev) =>
-      prev.map((c) =>
-        c.complaint_id === selectedComplaint.complaint_id ? { ...c, ...updates } : c
-      )
-    );
-    const index = complaints.findIndex((c) => c.complaint_id === selectedComplaint.complaint_id);
-    if (index !== -1) Object.assign(complaints[index], updates);
-    showToast(`✅ Complaint #${selectedComplaint.complaint_id} updated to "${newStatus}"`);
+    const res = await complaintAPI.updateStatus(selectedComplaint._id, newStatus, resolutionNotes);
+    if (!res.complaint) { showToast(res.message || "Could not update complaint", "#dc2626"); return; }
+    setComplaintList((prev) => prev.map((c) => (c._id === selectedComplaint._id ? { ...c, ...res.complaint } : c)));
+    showToast(`✅ Complaint #${shortId(selectedComplaint.complaint_id)} updated to "${newStatus}"`);
     setStatusModal(false);
     setSelectedComplaint(null);
     setResolutionNotes("");
@@ -96,7 +93,7 @@ function MaintenanceDashboard() {
       {statusModal && selectedComplaint && (
         <div style={styles.modalOverlay}>
           <div style={styles.modal}>
-            <h3 style={styles.modalTitle}>Update Complaint #{selectedComplaint.complaint_id}</h3>
+            <h3 style={styles.modalTitle}>Update Complaint #{shortId(selectedComplaint.complaint_id)}</h3>
             <p style={styles.modalSubtitle}>Move this complaint forward in the resolution process.</p>
             <div style={styles.modalInfo}>
               <p><strong>Category:</strong> {selectedComplaint.category}</p>
@@ -214,7 +211,7 @@ function MaintenanceDashboard() {
                 {filtered.map((c, index) => (
                   <tr key={c.complaint_id} className="table-row-hover"
                     style={{ ...styles.tableRow, backgroundColor: index % 2 === 0 ? "#ffffff" : "#f9fafb" }}>
-                    <td style={styles.td}><span style={styles.idBadge}>#{c.complaint_id}</span></td>
+                    <td style={styles.td}><span style={styles.idBadge}>#{shortId(c.complaint_id)}</span></td>
                     <td style={styles.td}><span style={styles.studentName}>{c.student_name}</span></td>
                     <td style={styles.td}><span style={styles.roomBadge}>{c.room_no}</span></td>
                     <td style={styles.td}><span style={styles.categoryText}>{getCategoryIcon(c.category)} {c.category}</span></td>

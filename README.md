@@ -58,21 +58,44 @@ cd hostel-complaint-system
 npm install
 npm run dev
 
----
+## Live demo
+
+**https://mitisha-sharma.github.io/hostel-complaint-system/**
+
+The hosted site runs in **demo mode**: a small in-browser backend (`src/api/mockServer.js`) stores data in your browser's localStorage, so no server is needed. Log in with the quick-login buttons:
+
+| Role | Email | Password |
+|---|---|---|
+| Student | `student@hostel.com` | `student123` |
+| Admin / Warden | `admin@hostel.com` | `admin123` |
+| Maintenance | `staff@hostel.com` | `staff123` |
+
+Demo data resets if you clear site data. Everything you create stays only in your browser.
 
 ## Running locally
 
+**Frontend only (demo mode, no database):**
 ```bash
-# 1) Backend (http://localhost:5000)
+npm install
+npm run dev        # http://localhost:5173
+```
+If the backend isn't running, the app automatically falls back to demo mode.
+
+**Full stack (Express + MongoDB):**
+```bash
+# terminal 1: backend on http://localhost:5000
 cd backend
 npm install
-npm start        # uses MongoDB at MONGODB_URI; if none is running it falls back to an in-memory DB with demo users
+npm start          # uses MONGODB_URI; if no MongoDB is running it starts a temporary in-memory DB with the demo users
 
-# 2) Frontend (http://localhost:5173) - in a second terminal, from the project root
+# terminal 2: frontend, from the project root
 npm install
 npm run dev
 ```
+Copy `backend/.env.example` to `backend/.env` and set your own `JWT_SECRET`. To use a real MongoDB, set `MONGODB_URI` and run `node seed.js` once to create the demo users.
 
-Demo logins: `student@hostel.com / student123`, `admin@hostel.com / admin123`, `staff@hostel.com / staff123`.
-Copy `backend/.env.example` to `backend/.env` and set your own `JWT_SECRET` (`.env` is no longer tracked by git).
-To use a real MongoDB: set `MONGODB_URI`, then run `node seed.js` once to create the demo users.
+## Deployment
+
+Pushing to `main` builds the frontend and publishes it to GitHub Pages through `.github/workflows/deploy.yml`.
+One-time setup: **Settings -> Pages -> Build and deployment -> Source: GitHub Actions**.
+To point the hosted site at a real backend instead of demo mode, set the repository variable/secret `VITE_API_URL` and pass it to the build step.

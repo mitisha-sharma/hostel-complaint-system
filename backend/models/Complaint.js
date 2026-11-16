@@ -4,7 +4,7 @@ const complaintSchema = new mongoose.Schema(
   {
     category: {
       type: String,
-      enum: ['Electrical', 'Plumbing', 'Carpentry', 'Cleanliness', 'Maintenance', 'Other'],
+      enum: ['Electrical', 'Plumbing', 'Carpentry', 'Cleaning', 'Internet', 'Cleanliness', 'Maintenance', 'Other'],
       required: true,
     },
     description: {
