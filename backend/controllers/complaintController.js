@@ -1,4 +1,5 @@
 import Complaint from '../models/Complaint.js';
+import User from '../models/User.js';
 
 export const raiseComplaint = async (req, res) => {
   try {
@@ -6,8 +7,8 @@ export const raiseComplaint = async (req, res) => {
     const { id: student_id, name: student_name } = req.user;
 
     // Get student room number from database
-    const studentData = await Complaint.findOne({ student_id });
-    const room_no = studentData?.room_no || 'Unknown';
+    const student = await User.findById(student_id).select('room_no');
+    const room_no = student?.room_no || 'Unknown';
 
     const newComplaint = new Complaint({
       category,

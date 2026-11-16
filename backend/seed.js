@@ -1,20 +1,11 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
 import User from './models/User.js';
 
 dotenv.config();
 
-const seedDatabase = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hostel-complaints');
-    console.log('MongoDB connected for seeding');
-
-    // Clear existing users
-    await User.deleteMany({});
-    console.log('Cleared existing users');
-
-    // Create test users
-    const users = [
+export const DEMO_USERS = [
       {
         name: 'Arjun Sharma',
         email: 'student@hostel.com',
@@ -56,15 +47,23 @@ const seedDatabase = async () => {
       },
     ];
 
-    const createdUsers = await User.insertMany(users);
-    console.log('Users created:', createdUsers.length);
-
-    await mongoose.connection.close();
-    console.log('Seeding completed successfully');
-  } catch (error) {
-    console.error('Seeding error:', error);
-    process.exit(1);
-  }
+// Replaces all users with the demo accounts (uses User.create so passwords get hashed by the model hook)
+export const seedUsers = async () => {
+  await User.deleteMany({});
+  const created = [];
+  for (const u of DEMO_USERS) created.push(await User.create(u));
+  return created.length;
 };
 
-seedDatabase();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  (async () => {
+    try {
+      await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/hostel-complaints');
+      console.log('Users created:', await seedUsers());
+      await mongoose.connection.close();
+    } catch (error) {
+      console.error('Seeding error:', error.message);
+      process.exit(1);
+    }
+  })();
+}

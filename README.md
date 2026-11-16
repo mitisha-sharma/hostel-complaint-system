@@ -57,3 +57,22 @@ git clone https://github.com/YOUR_USERNAME/hostel-complaint-system.git
 cd hostel-complaint-system
 npm install
 npm run dev
+
+---
+
+## Running locally
+
+```bash
+# 1) Backend (http://localhost:5000)
+cd backend
+npm install
+npm start        # uses MongoDB at MONGODB_URI; if none is running it falls back to an in-memory DB with demo users
+
+# 2) Frontend (http://localhost:5173) - in a second terminal, from the project root
+npm install
+npm run dev
+```
+
+Demo logins: `student@hostel.com / student123`, `admin@hostel.com / admin123`, `staff@hostel.com / staff123`.
+Copy `backend/.env.example` to `backend/.env` and set your own `JWT_SECRET` (`.env` is no longer tracked by git).
+To use a real MongoDB: set `MONGODB_URI`, then run `node seed.js` once to create the demo users.
